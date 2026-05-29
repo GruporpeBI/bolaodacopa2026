@@ -28,7 +28,7 @@ interface GameRanking {
   gameId: string;
   label: string;
   home_score: number | null;
-  away_score: number;
+  away_score: number | null;
   entries: GameRankingEntry[];
 }
 
