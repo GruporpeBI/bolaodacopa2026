@@ -57,7 +57,6 @@ export const TEAM_NAMES_PTBR: Record<string, string> = {
   "Uzbekistan": "Uzbequistão",
   "Côte d'Ivoire": "Costa do Marfim",
   "Curaçao": "Curaçao",
-  "Scotland": "Escócia",
   "A definir": "A definir",
 };
 
