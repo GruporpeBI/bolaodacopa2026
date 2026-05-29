@@ -115,8 +115,13 @@ export default async function PalpitesPage() {
           </div>
         </div>
 
-        {/* Check-in silencioso ao entrar na página (também cobre quem já estava logado) */}
-        <CheckInTrigger isLoggedIn={!!dbUserId} />
+        {/* Check-in silencioso ao entrar na página */}
+        <CheckInTrigger
+          gameId={dbUserId && todayBrazilGame ? todayBrazilGame.id : null}
+          restaurantLat={locationConfig.lat}
+          restaurantLng={locationConfig.lng}
+          radiusM={locationConfig.radiusM}
+        />
 
         {!dbUserId && (
           <div className="border border-[#F6C900]/20 rounded-sm px-5 py-4 mb-8 text-[#FAF6EB]/70 text-sm">

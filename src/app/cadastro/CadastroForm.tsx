@@ -6,7 +6,6 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import BirthDatePicker from "@/components/ui/BirthDatePicker";
 import { registerUser, checkCpfExists, loginByCpf } from "./actions";
-import { getTodayCheckInGame, selfCheckIn } from "@/app/palpites/actions";
 import RegisterModal from "./RegisterModal";
 
 /* ── helpers ─────────────────────────────────────────────── */
@@ -101,38 +100,9 @@ export default function CadastroForm() {
     setRegMessage("");
   }
 
-  /* — login: autenticar, tentar check-in automático no dia do jogo e redirecionar — */
+  /* — login: autenticar e redirecionar — geolocalização é pedida na página de palpites — */
   async function handleGoToPalpites() {
     await loginByCpf(loginCpf);
-
-    // Tenta check-in automático se hoje é dia de jogo do Brasil
-    try {
-      const game = await getTodayCheckInGame();
-      if (game && navigator.geolocation) {
-        await Promise.race([
-          new Promise<void>((resolve) => {
-            navigator.geolocation.getCurrentPosition(
-              async (pos) => {
-                const R = 6371000;
-                const toRad = (d: number) => (d * Math.PI) / 180;
-                const dLat = toRad(pos.coords.latitude - game.restaurantLat);
-                const dLng = toRad(pos.coords.longitude - game.restaurantLng);
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(game.restaurantLat)) * Math.cos(toRad(pos.coords.latitude)) * Math.sin(dLng / 2) ** 2;
-                const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                if (dist <= game.radiusM) {
-                  await selfCheckIn(game.gameId);
-                }
-                resolve();
-              },
-              () => resolve(), // nega permissão ou erro → segue sem check-in
-              { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
-            );
-          }),
-          new Promise<void>((resolve) => setTimeout(resolve, 8000)), // timeout máximo
-        ]);
-      }
-    } catch { /* silencioso */ }
-
     router.push("/palpites");
   }
 

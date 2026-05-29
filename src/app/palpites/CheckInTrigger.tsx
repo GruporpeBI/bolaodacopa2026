@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { getTodayCheckInGame, selfCheckIn } from "./actions";
+import { selfCheckIn } from "./actions";
 
 interface CheckInTriggerProps {
-  isLoggedIn: boolean;
+  gameId: string | null;
+  restaurantLat: number;
+  restaurantLng: number;
+  radiusM: number;
 }
 
 function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -18,36 +21,29 @@ function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number)
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-export default function CheckInTrigger({ isLoggedIn }: CheckInTriggerProps) {
+export default function CheckInTrigger({ gameId, restaurantLat, restaurantLng, radiusM }: CheckInTriggerProps) {
   const ran = useRef(false);
 
   useEffect(() => {
-    if (!isLoggedIn || ran.current || !navigator.geolocation) return;
+    if (!gameId || ran.current || !navigator.geolocation) return;
     ran.current = true;
 
-    (async () => {
-      try {
-        const game = await getTodayCheckInGame();
-        if (!game) return;
-
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const dist = haversineMeters(
-              pos.coords.latitude,
-              pos.coords.longitude,
-              game.restaurantLat,
-              game.restaurantLng
-            );
-            if (dist <= game.radiusM) {
-              await selfCheckIn(game.gameId);
-            }
-          },
-          () => {}, // nega permissão → silencioso
-          { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const dist = haversineMeters(
+          pos.coords.latitude,
+          pos.coords.longitude,
+          restaurantLat,
+          restaurantLng
         );
-      } catch { /* silencioso */ }
-    })();
-  }, [isLoggedIn]);
+        if (dist <= radiusM) {
+          await selfCheckIn(gameId).catch(() => {});
+        }
+      },
+      () => {}, // negou permissão → silencioso
+      { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
+    );
+  }, [gameId, restaurantLat, restaurantLng, radiusM]);
 
   return null;
 }
