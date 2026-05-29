@@ -8,7 +8,7 @@ import AdminButton from "@/components/AdminButton";
 
 const pontuacao = [
   { evento: "Presença no restaurante (jogo Brasil)", pts: 51 },
-  { evento: "Resultado correto", pts: 16 },
+  { evento: "Acertou o ganhador (sem placar exato)", pts: 16 },
   { evento: "Placar exato", pts: 30 },
   { evento: "Semifinalista correto (cada)", pts: 27 },
   { evento: "Finalista correto (cada)", pts: 40 },
@@ -132,7 +132,7 @@ export default function HomePage() {
           </div>
 
           <p className="text-[#FAF6EB]/50 text-sm text-center mt-6">
-            Em caso de empate, o desempate é por número de presenças, placares exatos, resultados corretos, e proximidade na % de posse de bola.
+            Em caso de empate, o desempate é por número de presenças, placares exatos, acertos de ganhador, e proximidade na % de posse de bola.
           </p>
         </div>
       </section>

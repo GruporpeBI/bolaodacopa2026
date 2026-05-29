@@ -51,7 +51,7 @@ function maskName(name: string): string {
 
 function ptsLabel(pts: number): string {
   if (pts === 30 || pts === 121) return "Placar exato";
-  if (pts === 16) return "Resultado";
+  if (pts === 16) return "Acertou Ganhador";
   if (pts === 0) return "Errou";
   return `${pts} pts`;
 }
@@ -154,7 +154,7 @@ export default function RankingTable({ initialData, gameRankings }: RankingTable
                   <div className="flex flex-wrap gap-1 justify-center text-xs text-[#FAF6EB]/50">
                     <span>{row.attendance_pts} pres</span>
                     <span>·</span>
-                    <span>{row.result_pts} res</span>
+                    <span>{row.result_pts} gan</span>
                     <span>·</span>
                     <span>{row.exact_score_pts} placar</span>
                     <span>·</span>
@@ -173,7 +173,7 @@ export default function RankingTable({ initialData, gameRankings }: RankingTable
                   <th className="py-3 text-left">Participante</th>
                   <th className="py-3 text-right">Total</th>
                   <th className="py-3 text-right hidden sm:table-cell">Pres.</th>
-                  <th className="py-3 text-right hidden sm:table-cell">Result.</th>
+                  <th className="py-3 text-right hidden sm:table-cell">Ganhador</th>
                   <th className="py-3 text-right hidden sm:table-cell">Placar</th>
                   <th className="py-3 text-right hidden md:table-cell">Torneio</th>
                 </tr>

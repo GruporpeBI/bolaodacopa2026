@@ -123,7 +123,7 @@ export default function TermosPage() {
               <tbody className="text-[#FAF6EB]/70">
                 {[
                   ["Presença no restaurante (jogo do Brasil)", "51 pts"],
-                  ["Resultado correto (vitória / empate / derrota)", "16 pts"],
+                  ["Acertou o ganhador (sem placar exato)", "16 pts"],
                   ["Placar exato do jogo", "30 pts"],
                   ["Semifinalista correto (por time, máx. 4)", "27 pts cada"],
                   ["Finalista correto (por time, máx. 2)", "40 pts cada"],
@@ -150,7 +150,7 @@ export default function TermosPage() {
             {[
               "Maior número de presenças verificadas no restaurante durante jogos do Brasil.",
               "Maior número de placares exatos acertados.",
-              "Maior número de resultados corretos (vitória/empate/derrota).",
+              "Maior número de acertos de ganhador (sem placar exato).",
               "Menor diferença absoluta no percentual de posse de bola previsto versus real.",
               "Palpite do jogo enviado mais cedo (registro de data/hora no sistema).",
               "Sorteio presencial realizado pelo organizador, na presença dos participantes empatados.",

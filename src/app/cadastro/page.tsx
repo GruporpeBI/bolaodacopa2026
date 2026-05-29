@@ -38,7 +38,7 @@ export default function CadastroPage() {
             {[
               ["51 pts", "Presença no restaurante durante jogo do Brasil"],
               ["30 pts", "Placar exato do jogo"],
-              ["16 pts", "Resultado correto (vitória/empate/derrota)"],
+              ["16 pts", "Acertou o ganhador (sem placar exato)"],
               ["101 pts", "Campeão correto"],
               ["121 pts", "Placar exato da final"],
             ].map(([pts, desc]) => (
