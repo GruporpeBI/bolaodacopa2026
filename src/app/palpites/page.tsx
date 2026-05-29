@@ -4,7 +4,6 @@ import Badge from "@/components/ui/Badge";
 import GameCard from "./GameCard";
 import TournamentPredictions from "./TournamentPredictions";
 import { getLocationConfig } from "@/app/admin/actions";
-import CheckInTrigger from "./CheckInTrigger";
 import type { Database } from "@/lib/supabase/types";
 
 type GameRow = Database["public"]["Tables"]["games"]["Row"];
@@ -115,13 +114,6 @@ export default async function PalpitesPage() {
           </div>
         </div>
 
-        {/* Check-in ao entrar na página — só pede geolocalização se ainda não fez check-in */}
-        <CheckInTrigger
-          gameId={dbUserId && todayBrazilGame && !alreadyCheckedIn ? todayBrazilGame.id : null}
-          restaurantLat={locationConfig.lat}
-          restaurantLng={locationConfig.lng}
-          radiusM={locationConfig.radiusM}
-        />
 
         {!dbUserId && (
           <div className="border border-[#F6C900]/20 rounded-sm px-5 py-4 mb-8 text-[#FAF6EB]/70 text-sm">
@@ -157,6 +149,7 @@ export default async function PalpitesPage() {
           <div className="flex flex-col gap-4">
             {regularGames.map((game) => {
               const isPredictionDay = !!(game as { predictions_early?: boolean }).predictions_early || gameDayBrasilia(game.scheduled_at) === today;
+              const isThisGameCheckedIn = alreadyCheckedIn && todayBrazilGame?.id === game.id;
               return (
                 <GameCard
                   key={game.id}
@@ -165,6 +158,11 @@ export default async function PalpitesPage() {
                   hasTournamentPrediction={hasTournamentPrediction}
                   isLoggedIn={!!dbUserId}
                   isPredictionDay={isPredictionDay}
+                  alreadyCheckedIn={isThisGameCheckedIn}
+                  isGameDay={isPredictionDay && !!(game as { is_brazil_game?: boolean }).is_brazil_game}
+                  restaurantLat={locationConfig.lat}
+                  restaurantLng={locationConfig.lng}
+                  radiusM={locationConfig.radiusM}
                 />
               );
             })}

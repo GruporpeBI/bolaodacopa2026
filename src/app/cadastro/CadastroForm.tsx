@@ -6,7 +6,6 @@ import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import BirthDatePicker from "@/components/ui/BirthDatePicker";
 import { registerUser, checkCpfExists, loginByCpf } from "./actions";
-import { getTodayCheckInGame, selfCheckIn } from "@/app/palpites/actions";
 import RegisterModal from "./RegisterModal";
 
 /* ── helpers ─────────────────────────────────────────────── */
@@ -101,32 +100,9 @@ export default function CadastroForm() {
     setRegMessage("");
   }
 
-  /* — login: autenticar, pedir geolocalização se há jogo hoje, redirecionar — */
+  /* — login: autenticar e redirecionar — */
   async function handleGoToPalpites() {
     await loginByCpf(loginCpf);
-
-    // Pede geolocalização no momento do login se há jogo hoje
-    try {
-      const game = await getTodayCheckInGame();
-      if (game && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const R = 6371000;
-            const toRad = (d: number) => (d * Math.PI) / 180;
-            const dLat = toRad(pos.coords.latitude - game.restaurantLat);
-            const dLng = toRad(pos.coords.longitude - game.restaurantLng);
-            const a = Math.sin(dLat/2)**2 + Math.cos(toRad(game.restaurantLat))*Math.cos(toRad(pos.coords.latitude))*Math.sin(dLng/2)**2;
-            const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            if (dist <= game.radiusM) {
-              await selfCheckIn(game.gameId).catch(() => {});
-            }
-          },
-          () => {}, // nega permissão → silencioso
-          { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
-        );
-      }
-    } catch { /* silencioso */ }
-
     router.push("/palpites");
   }
 

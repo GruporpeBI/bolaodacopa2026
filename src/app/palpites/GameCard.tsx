@@ -3,9 +3,11 @@
 import { useState } from "react";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
 import CountdownTimer from "./CountdownTimer";
 import PredictionForm from "./PredictionForm";
 import { teamName, teamFlagUrl } from "@/lib/team-names";
+import { selfCheckIn } from "./actions";
 
 interface GameCardProps {
   game: {
@@ -25,6 +27,11 @@ interface GameCardProps {
   hasTournamentPrediction: boolean;
   isLoggedIn: boolean;
   isPredictionDay: boolean;
+  alreadyCheckedIn: boolean;
+  isGameDay: boolean;
+  restaurantLat: number;
+  restaurantLng: number;
+  radiusM: number;
 }
 
 const stageLabel: Record<string, string> = {
@@ -35,12 +42,28 @@ const stageLabel: Record<string, string> = {
   final: "Final",
 };
 
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function GameCard({
   game,
   existingPrediction,
   hasTournamentPrediction,
   isLoggedIn,
   isPredictionDay,
+  alreadyCheckedIn,
+  isGameDay,
+  restaurantLat,
+  restaurantLng,
+  radiusM,
 }: GameCardProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -65,6 +88,29 @@ export default function GameCard({
 
   const canPredict = isLoggedIn && !isPastDeadline && !existingPrediction && isPredictionDay;
   const needsTournament = canPredict && !hasTournamentPrediction;
+
+  function handlePredictClick() {
+    // Pede geolocalização UMA VEZ no clique, se for dia do jogo e ainda não fez check-in
+    if (isGameDay && !alreadyCheckedIn && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const dist = haversineMeters(
+            pos.coords.latitude,
+            pos.coords.longitude,
+            restaurantLat,
+            restaurantLng
+          );
+          if (dist <= radiusM) {
+            await selfCheckIn(game.id).catch(() => {});
+          }
+        },
+        () => {}, // negou permissão → silencioso
+        { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
+      );
+    }
+    // Abre o formulário imediatamente, sem esperar a geo
+    setExpanded((v) => !v);
+  }
 
   return (
     <Card variant="dark" className="p-5">
@@ -118,12 +164,13 @@ export default function GameCard({
         </div>
 
         {canPredict && !needsTournament && (
-          <button
-            onClick={() => setExpanded((v) => !v)}
-            className="text-xs text-[#F6C900] underline underline-offset-2 hover:text-[#D4A800] transition-colors"
+          <Button
+            variant="gold"
+            size="sm"
+            onClick={handlePredictClick}
           >
             {expanded ? "Fechar" : "Fazer palpite"}
-          </button>
+          </Button>
         )}
       </div>
 
