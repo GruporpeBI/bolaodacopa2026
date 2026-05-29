@@ -28,8 +28,8 @@ interface GameRankingEntry {
 interface GameRanking {
   gameId: string;
   label: string;
-  home_score: number;
-  away_score: number;
+  home_score: number | null;
+  away_score: number | null;
   entries: GameRankingEntry[];
 }
 
@@ -93,16 +93,17 @@ export default async function RankingPage() {
     const yesterdayBr = new Date(nowBrasilia.getTime() - 86400000).toISOString().slice(0, 10);
 
     type GameVisible = { id: string; home_team: string; away_team: string; home_score: number | null; away_score: number | null; is_final: boolean; scheduled_at: string };
-    const { data: allResultGamesRaw } = await supabase
+
+    // Todos os jogos habilitados — sem filtro de resultado
+    const { data: allEnabledGamesRaw } = await supabase
       .from("games")
       .select("id, home_team, away_team, home_score, away_score, is_final, scheduled_at")
-      .not("home_score", "is", null)
-      .not("away_score", "is", null);
+      .eq("is_enabled", true as unknown as string);
 
-    const allResultGames = (allResultGamesRaw as GameVisible[] | null) ?? [];
+    const allEnabledGames = (allEnabledGamesRaw as GameVisible[] | null) ?? [];
 
-    // Filtra jogos cujo dia (Brasília) é hoje ou ontem
-    const visibleGames = allResultGames.filter((g) => {
+    // Mostra aba de ranking no dia do jogo e no dia seguinte (com ou sem resultado)
+    const visibleGames = allEnabledGames.filter((g) => {
       const gDay = new Date(new Date(g.scheduled_at).getTime() - 3 * 60 * 60 * 1000)
         .toISOString().slice(0, 10);
       return gDay === todayBr || gDay === yesterdayBr;
@@ -110,7 +111,17 @@ export default async function RankingPage() {
 
     if (visibleGames && visibleGames.length > 0) {
       for (const game of visibleGames) {
-        if (game.home_score === null || game.away_score === null) continue;
+        // Sem resultado: mostra o jogo no tab mas sem entradas de ranking
+        if (game.home_score === null || game.away_score === null) {
+          gameRankings.push({
+            gameId: game.id,
+            label: `${teamName(game.home_team)} × ${teamName(game.away_team)}`,
+            home_score: null,
+            away_score: null,
+            entries: [],
+          });
+          continue;
+        }
 
         type PredBasic = { user_id: string; home_score_pred: number; away_score_pred: number };
         const { data: predsRaw } = await supabase

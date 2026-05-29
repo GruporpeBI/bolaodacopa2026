@@ -235,14 +235,27 @@ export default function RankingTable({ initialData, gameRankings }: RankingTable
 
           {currentGameRanking && (
             <>
-              <div className="flex items-center gap-3 mb-6">
+              <div className="flex items-center gap-3 mb-6 flex-wrap">
                 <h2 className="text-lg font-bold text-[#FAF6EB]">{currentGameRanking.label}</h2>
-                <span className="text-[#F6C900] font-black text-xl">
-                  {currentGameRanking.home_score} × {currentGameRanking.away_score}
-                </span>
-                <Badge variant="green">Resultado final</Badge>
+                {currentGameRanking.home_score !== null ? (
+                  <>
+                    <span className="text-[#F6C900] font-black text-xl">
+                      {currentGameRanking.home_score} × {currentGameRanking.away_score}
+                    </span>
+                    <Badge variant="green">Resultado final</Badge>
+                  </>
+                ) : (
+                  <Badge variant="dark">Aguardando resultado</Badge>
+                )}
               </div>
 
+              {currentGameRanking.entries.length === 0 ? (
+                <p className="text-[#FAF6EB]/40 text-sm py-8 text-center">
+                  {currentGameRanking.home_score === null
+                    ? "O ranking será exibido após o resultado do jogo."
+                    : "Nenhum palpite registrado para este jogo."}
+                </p>
+              ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -283,6 +296,7 @@ export default function RankingTable({ initialData, gameRankings }: RankingTable
                   </tbody>
                 </table>
               </div>
+              )}
             </>
           )}
         </div>
