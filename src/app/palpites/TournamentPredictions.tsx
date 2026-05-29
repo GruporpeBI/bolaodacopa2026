@@ -63,6 +63,7 @@ interface Existing {
   semi3: string; semi4: string; sf2_score_a: number; sf2_score_b: number; sf2_tiebreak: string | null;
   finalist1: string; finalist2: string;
   final_score_a: number; final_score_b: number; final_tiebreak: string | null;
+  possession_pred_final: number | null;
   champion: string;
 }
 
@@ -80,16 +81,24 @@ function deriveWinner(teamA: string, teamB: string, scoreA: number, scoreB: numb
 function ScoreInput({
   value, onChange, disabled,
 }: { value: string; onChange: (v: string) => void; disabled: boolean }) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\D/g, "");
+    if (raw === "") { onChange(""); return; }
+    const n = parseInt(raw, 10);
+    if (n > 20) return;
+    onChange(String(n));
+  }
   return (
     <input
-      type="number"
-      min={0}
-      max={20}
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={handleChange}
       disabled={disabled}
       placeholder="0"
-      className="w-14 text-center bg-[#1A1A1A] border border-[#F6C900]/30 text-[#FAF6EB] rounded-sm py-2 text-lg font-bold outline-none focus:border-[#F6C900] disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+      maxLength={2}
+      className="w-14 text-center bg-[#1A1A1A] border border-[#F6C900]/30 text-[#FAF6EB] rounded-sm py-2 text-lg font-bold outline-none focus:border-[#F6C900] disabled:opacity-40"
     />
   );
 }
@@ -144,6 +153,10 @@ export default function TournamentPredictions({ disabled, existing }: Tournament
   const [finalA, setFinalA] = useState(existing?.final_score_a?.toString() ?? "");
   const [finalB, setFinalB] = useState(existing?.final_score_b?.toString() ?? "");
   const [finalTie, setFinalTie] = useState(existing?.final_tiebreak ?? "");
+  const [finalPossession, setFinalPossession] = useState(
+    existing?.possession_pred_final != null ? String(existing.possession_pred_final) : ""
+  );
+  const [finalPossessionTeam, setFinalPossessionTeam] = useState<"home" | "away">("home");
 
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -177,6 +190,11 @@ export default function TournamentPredictions({ disabled, existing }: Tournament
     if (finalA === "" || finalB === "") return setMessage("Preencha o placar da final.");
     if (finalDraw && !finalTie) return setMessage("Indique o campeão (final empatada).");
     if (!champion) return setMessage("Campeão não determinado.");
+    const fp = parseInt(finalPossession);
+    if (isNaN(fp) || fp < 50 || fp > 100) return setMessage("Informe a posse de bola da final (50–100%).");
+
+    // Converte para posse do time da casa
+    const possessionFinal = finalPossessionTeam === "home" ? fp : 100 - fp;
 
     setMessage("");
     setStatus("loading");
@@ -185,6 +203,7 @@ export default function TournamentPredictions({ disabled, existing }: Tournament
       semi3, semi4, sf2_score_a: parseInt(sf2A), sf2_score_b: parseInt(sf2B), sf2_tiebreak: sf2Tie || null,
       finalist1, finalist2,
       final_score_a: parseInt(finalA), final_score_b: parseInt(finalB), final_tiebreak: finalTie || null,
+      possession_pred_final: possessionFinal,
       champion,
     });
     if (result.success) { setStatus("success"); setMessage("Palpites do torneio salvos!"); }
@@ -234,6 +253,12 @@ export default function TournamentPredictions({ disabled, existing }: Tournament
               <span className="text-[#F6C900] font-black">{existing.final_score_a} × {existing.final_score_b}</span>
               <TeamName name={existing.finalist2} />
             </div>
+            {existing.possession_pred_final != null && (
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[#FAF6EB]/40 text-xs">Posse da final:</span>
+                <span className="text-[#FAF6EB]/70 text-xs font-bold">{existing.possession_pred_final}% — {existing.finalist1}</span>
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-2">
               <span className="text-[#FAF6EB]/40 text-xs">Campeão:</span>
               <span className="flex items-center gap-1.5 text-[#F6C900] font-bold">
@@ -327,6 +352,51 @@ export default function TournamentPredictions({ disabled, existing }: Tournament
                 </select>
               </div>
             )}
+
+            {/* Posse de bola — Final */}
+            <div className="flex flex-col gap-2 mt-1">
+              <span className="text-xs font-semibold text-[#F6C900] uppercase tracking-wider">Posse de bola — Final (%)</span>
+              <div className="flex gap-2">
+                {(["home", "away"] as const).map((side) => {
+                  const teamLabel = side === "home" ? finalist1 : finalist2;
+                  const active = finalPossessionTeam === side;
+                  return (
+                    <button
+                      key={side}
+                      type="button"
+                      onClick={() => setFinalPossessionTeam(side)}
+                      disabled={lock}
+                      className={`px-3 py-1.5 rounded-sm text-xs font-bold border transition-all disabled:opacity-40 ${
+                        active ? "bg-[#F6C900] border-[#F6C900] text-[#1A1A1A]"
+                          : "bg-transparent border-[#F6C900]/30 text-[#FAF6EB]/60 hover:border-[#F6C900]/60"
+                      }`}
+                    >
+                      {teamLabel || (side === "home" ? "Finalista 1" : "Finalista 2")}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={finalPossession}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\D/g, "");
+                    if (raw === "") { setFinalPossession(""); return; }
+                    const n = parseInt(raw, 10);
+                    if (n > 100) return;
+                    setFinalPossession(String(n));
+                  }}
+                  disabled={lock}
+                  placeholder="50"
+                  maxLength={3}
+                  className="w-16 text-center bg-[#1A1A1A] border border-[#F6C900]/30 text-[#FAF6EB] rounded-sm py-2 text-base font-bold outline-none focus:border-[#F6C900] disabled:opacity-40"
+                />
+                <span className="text-[#FAF6EB]/40 text-sm">% (mín. 50%)</span>
+              </div>
+            </div>
 
             {champion && (
               <div className="flex items-center gap-3 mt-1 bg-[#F6C900]/10 border border-[#F6C900]/30 rounded-sm px-4 py-3">

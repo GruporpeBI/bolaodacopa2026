@@ -83,6 +83,7 @@ interface TournamentPayload {
   semi3: string; semi4: string; sf2_score_a: number; sf2_score_b: number; sf2_tiebreak: string | null;
   finalist1: string; finalist2: string;
   final_score_a: number; final_score_b: number; final_tiebreak: string | null;
+  possession_pred_final: number;
   champion: string;
 }
 
@@ -133,6 +134,7 @@ export async function submitTournamentPredictions(
     final_score_a: payload.final_score_a,
     final_score_b: payload.final_score_b,
     final_tiebreak: payload.final_tiebreak,
+    possession_pred_final: payload.possession_pred_final,
     champion,
   };
 

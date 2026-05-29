@@ -107,6 +107,7 @@ export default function PalpitesPreviewPage() {
               semi3: "Argentina", semi4: "Portugal", sf2_score_a: 0, sf2_score_b: 0, sf2_tiebreak: "Argentina",
               finalist1: "Brasil", finalist2: "Argentina",
               final_score_a: 3, final_score_b: 1, final_tiebreak: null,
+              possession_pred_final: 55,
               champion: "Brasil",
             }}
           />

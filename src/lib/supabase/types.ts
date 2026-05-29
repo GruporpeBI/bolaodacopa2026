@@ -75,6 +75,7 @@ export interface Database {
           final_score_a: number;
           final_score_b: number;
           final_tiebreak: string | null; // quem vence se empate
+          possession_pred_final: number | null;
           champion: string;
           locked_at: string;
         };
