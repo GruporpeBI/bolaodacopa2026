@@ -30,6 +30,7 @@ export interface Database {
           is_final: boolean;
           external_id: number | null;
           is_enabled: boolean;
+          predictions_early: boolean;
           ranking_visible: boolean;
           sofascore_id: number | null;
           sofascore_url: string | null;

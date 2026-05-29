@@ -17,6 +17,7 @@ interface Game {
   is_brazil_game: boolean;
   is_final: boolean;
   is_enabled: boolean;
+  predictions_early: boolean;
   ranking_visible: boolean;
   external_id: number | null;
   home_score: number | null;
@@ -113,7 +114,8 @@ export default function AdminTabs({ games, users, attendances, locationConfig }:
                     <th className="py-3 text-left pr-4">Jogo</th>
                     <th className="py-3 text-left pr-4">Fase</th>
                     <th className="py-3 text-left pr-4">Tags</th>
-                    <th className="py-3 text-left">Habilitar</th>
+                    <th className="py-3 text-left pr-4">Habilitar</th>
+                    <th className="py-3 text-left">Antecip.</th>
                   </tr>
                 </thead>
                 <tbody>

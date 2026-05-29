@@ -91,6 +91,21 @@ export async function toggleGameEnabled(
   return { success: true };
 }
 
+export async function toggleGamePredictionsEarly(
+  gameId: string,
+  early: boolean
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = getAdminClient();
+  const { error } = await supabase
+    .from("games")
+    .update({ predictions_early: early } as never)
+    .eq("id", gameId);
+  if (error) return { success: false, error: error.message };
+  revalidatePath("/admin");
+  revalidatePath("/palpites");
+  return { success: true };
+}
+
 export async function toggleGameRanking(
   gameId: string,
   visible: boolean

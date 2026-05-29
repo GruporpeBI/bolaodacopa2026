@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Badge from "@/components/ui/Badge";
-import { toggleGameEnabled } from "./actions";
+import { toggleGameEnabled, toggleGamePredictionsEarly } from "./actions";
 import { teamName } from "@/lib/team-names";
 
 interface GameRowProps {
@@ -15,6 +15,7 @@ interface GameRowProps {
     is_brazil_game: boolean;
     is_final: boolean;
     is_enabled: boolean;
+    predictions_early: boolean;
     external_id: number | null;
   };
 }
@@ -27,15 +28,43 @@ const stageLabel: Record<string, string> = {
   final: "Final",
 };
 
+function Toggle({ checked, onChange, disabled, label }: {
+  checked: boolean; onChange: () => void; disabled: boolean; label: string;
+}) {
+  return (
+    <button
+      onClick={onChange}
+      disabled={disabled}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
+        checked ? "bg-[#004600]" : "bg-[#FAF6EB]/20"
+      }`}
+      aria-label={label}
+    >
+      <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+        checked ? "translate-x-6" : "translate-x-1"
+      }`} />
+    </button>
+  );
+}
+
 export default function GameRow({ game }: GameRowProps) {
   const [enabled, setEnabled] = useState(game.is_enabled);
-  const [loading, setLoading] = useState(false);
+  const [early, setEarly] = useState(game.predictions_early ?? false);
+  const [loadingEnabled, setLoadingEnabled] = useState(false);
+  const [loadingEarly, setLoadingEarly] = useState(false);
 
-  async function handleToggle() {
-    setLoading(true);
+  async function handleToggleEnabled() {
+    setLoadingEnabled(true);
     const result = await toggleGameEnabled(game.id, !enabled);
     if (result.success) setEnabled((v) => !v);
-    setLoading(false);
+    setLoadingEnabled(false);
+  }
+
+  async function handleToggleEarly() {
+    setLoadingEarly(true);
+    const result = await toggleGamePredictionsEarly(game.id, !early);
+    if (result.success) setEarly((v) => !v);
+    setLoadingEarly(false);
   }
 
   const dateStr = new Date(game.scheduled_at).toLocaleDateString("pt-BR", {
@@ -56,9 +85,7 @@ export default function GameRow({ game }: GameRowProps) {
         </div>
       </td>
       <td className="py-3 pr-4">
-        <span className="text-[#FAF6EB]/60 text-xs">
-          {stageLabel[game.stage] ?? game.stage}
-        </span>
+        <span className="text-[#FAF6EB]/60 text-xs">{stageLabel[game.stage] ?? game.stage}</span>
       </td>
       <td className="py-3 pr-4">
         <div className="flex flex-wrap gap-1">
@@ -66,21 +93,24 @@ export default function GameRow({ game }: GameRowProps) {
           {game.is_final && <Badge variant="gold">Final</Badge>}
         </div>
       </td>
+      <td className="py-3 pr-4">
+        <Toggle
+          checked={enabled}
+          onChange={handleToggleEnabled}
+          disabled={loadingEnabled}
+          label={enabled ? "Desabilitar jogo" : "Habilitar jogo"}
+        />
+      </td>
       <td className="py-3">
-        <button
-          onClick={handleToggle}
-          disabled={loading}
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none disabled:opacity-50 ${
-            enabled ? "bg-[#004600]" : "bg-[#FAF6EB]/20"
-          }`}
-          aria-label={enabled ? "Desabilitar jogo" : "Habilitar jogo"}
-        >
-          <span
-            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-              enabled ? "translate-x-6" : "translate-x-1"
-            }`}
+        <div className="flex flex-col items-center gap-0.5">
+          <Toggle
+            checked={early}
+            onChange={handleToggleEarly}
+            disabled={loadingEarly}
+            label={early ? "Fechar palpite antecipado" : "Abrir palpite antecipado"}
           />
-        </button>
+          {early && <span className="text-[#F6C900] text-[9px] font-bold uppercase tracking-wide">Aberto</span>}
+        </div>
       </td>
     </tr>
   );

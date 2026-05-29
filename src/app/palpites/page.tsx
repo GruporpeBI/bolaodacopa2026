@@ -147,7 +147,7 @@ export default async function PalpitesPage() {
         ) : (
           <div className="flex flex-col gap-4">
             {regularGames.map((game) => {
-              const isPredictionDay = gameDayBrasilia(game.scheduled_at) === today;
+              const isPredictionDay = !!(game as { predictions_early?: boolean }).predictions_early || gameDayBrasilia(game.scheduled_at) === today;
               return (
                 <GameCard
                   key={game.id}
