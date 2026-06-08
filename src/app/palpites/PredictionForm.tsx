@@ -2,7 +2,18 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/Button";
-import { submitPrediction } from "./actions";
+import { submitPrediction, selfCheckIn } from "./actions";
+
+function haversineMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 interface PredictionFormProps {
   gameId: string;
@@ -14,6 +25,11 @@ interface PredictionFormProps {
     away_score_pred: number;
     possession_pred: number;
   } | null;
+  showCheckIn?: boolean;
+  alreadyCheckedIn?: boolean;
+  restaurantLat?: number;
+  restaurantLng?: number;
+  radiusM?: number;
 }
 
 function ScoreInput({
@@ -105,6 +121,11 @@ export default function PredictionForm({
   awayTeam,
   disabled,
   existingPrediction,
+  showCheckIn = false,
+  alreadyCheckedIn = false,
+  restaurantLat = 0,
+  restaurantLng = 0,
+  radiusM = 400,
 }: PredictionFormProps) {
   const [homeScore, setHomeScore] = useState(
     existingPrediction?.home_score_pred?.toString() ?? ""
@@ -119,6 +140,10 @@ export default function PredictionForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const [checkInStatus, setCheckInStatus] = useState<"idle" | "locating" | "success" | "far" | "error">(
+    alreadyCheckedIn ? "success" : "idle"
+  );
+  const [checkInMessage, setCheckInMessage] = useState("");
 
   if (existingPrediction) {
     return (
@@ -142,6 +167,42 @@ export default function PredictionForm({
         </div>
         <p className="text-xs text-[#FAF6EB]/30 mt-2">Palpite já enviado — não é possível editar.</p>
       </div>
+    );
+  }
+
+  function handleCheckIn() {
+    if (!navigator.geolocation) {
+      setCheckInStatus("error");
+      setCheckInMessage("Geolocalização não suportada neste dispositivo.");
+      return;
+    }
+    setCheckInStatus("locating");
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const dist = haversineMeters(pos.coords.latitude, pos.coords.longitude, restaurantLat, restaurantLng);
+        if (dist > radiusM) {
+          setCheckInStatus("far");
+          setCheckInMessage(`Você está a ${Math.round(dist)}m do restaurante. Precisa estar a menos de ${radiusM}m.`);
+          return;
+        }
+        const result = await selfCheckIn(gameId);
+        if (result.success) {
+          setCheckInStatus("success");
+          setCheckInMessage("Presença registrada! +51 pontos no ranking.");
+        } else {
+          setCheckInStatus("error");
+          setCheckInMessage(result.error ?? "Erro ao registrar presença.");
+        }
+      },
+      (err) => {
+        setCheckInStatus("error");
+        setCheckInMessage(
+          err.code === err.PERMISSION_DENIED
+            ? "Permissão de localização negada. Habilite nas configurações do browser."
+            : "Não foi possível obter sua localização. Tente novamente."
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   }
 
@@ -241,6 +302,36 @@ export default function PredictionForm({
 
       {status === "success" && <p className="text-green-400 text-sm">{message}</p>}
       {status === "error" && <p className="text-red-400 text-sm">{message}</p>}
+
+      {showCheckIn && (
+        <div className="border-t border-[#F6C900]/10 pt-4 flex flex-col gap-2">
+          {checkInStatus === "success" ? (
+            <div className="flex items-center gap-2 text-green-400 text-sm">
+              <span>✓</span>
+              <span className="font-bold">Presença confirmada no Merça!</span>
+              {checkInMessage && <span className="text-[#FAF6EB]/50 text-xs">{checkInMessage}</span>}
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleCheckIn}
+                disabled={checkInStatus === "locating"}
+                className="flex items-center justify-center gap-2 w-full border border-green-500/40 bg-[#004600] hover:bg-[#005700] text-[#F6C900] font-bold py-3 px-4 rounded-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed text-sm uppercase tracking-wider"
+              >
+                <span>📍</span>
+                {checkInStatus === "locating" ? "Obtendo localização..." : "Faça check-in para subir pontuação"}
+              </button>
+              <p className="text-[#FAF6EB]/30 text-xs text-center">
+                Check-in válido para presentes no restaurante
+              </p>
+              {(checkInStatus === "far" || checkInStatus === "error") && (
+                <p className="text-red-400 text-xs text-center">{checkInMessage}</p>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </form>
   );
 }

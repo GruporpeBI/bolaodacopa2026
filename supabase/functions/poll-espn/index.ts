@@ -1,7 +1,7 @@
 /**
  * poll-espn — Supabase Edge Function
  *
- * Schedule: every 20 minutes (*/20 * * * *)
+ * Schedule: every 20 minutes — cron: "0,20,40 * * * *"
  *
  * Fetches score + possession + goals from ESPN Hidden API and writes
  * to match_latest.espn_* columns. When FT is detected, fetches TDB

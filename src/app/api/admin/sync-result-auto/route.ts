@@ -53,9 +53,15 @@ interface MatchResult {
   source:      "espn" | "apifootball";
 }
 
+function normalizeTeam(name: string): string {
+  return name.toLowerCase().replace(/[^a-z]/g, "").trim();
+}
+
 async function fetchFromEspn(
   espnId: string,
-  espnLeague: string
+  espnLeague: string,
+  dbHomeTeam: string,
+  dbAwayTeam: string
 ): Promise<MatchResult | null> {
   const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${espnLeague}/summary?event=${espnId}`;
   try {
@@ -65,18 +71,42 @@ async function fetchFromEspn(
 
     const comp      = d.header?.competitions?.[0];
     const completed = comp?.status?.type?.completed === true;
-    if (!completed) return null; // game not finished yet
+    if (!completed) return null;
 
-    const homeC = comp?.competitors?.find((c: { homeAway: string }) => c.homeAway === "home");
-    const awayC = comp?.competitors?.find((c: { homeAway: string }) => c.homeAway === "away");
+    const competitors = comp?.competitors ?? [];
+    const c0 = competitors[0];
+    const c1 = competitors[1];
+    if (!c0 || !c1) return null;
 
-    const homeScore = homeC?.score != null ? Number(homeC.score) : null;
-    const awayScore = awayC?.score != null ? Number(awayC.score) : null;
-    if (homeScore == null || awayScore == null) return null;
+    const c0Score = c0.score != null ? Number(c0.score) : null;
+    const c1Score = c1.score != null ? Number(c1.score) : null;
+    if (c0Score == null || c1Score == null) return null;
 
-    const homeStats = (d.boxscore?.teams?.[0]?.statistics ?? []) as Array<{
-      name: string;
-      displayValue: string;
+    // Match ESPN competitors to our DB home/away by team name
+    const dbHome = normalizeTeam(dbHomeTeam);
+    const dbAway = normalizeTeam(dbAwayTeam);
+    const n0     = normalizeTeam(c0.team?.displayName ?? c0.team?.name ?? "");
+    const n1     = normalizeTeam(c1.team?.displayName ?? c1.team?.name ?? "");
+
+    let homeScore: number;
+    let awayScore: number;
+    let espnHomeIdx: number; // which ESPN competitor is our home team (for possession lookup)
+
+    const c0IsHome = n0.includes(dbHome) || dbHome.includes(n0);
+    if (c0IsHome) {
+      homeScore    = c0Score;
+      awayScore    = c1Score;
+      espnHomeIdx  = 0;
+    } else {
+      // c1 is our home team (ESPN has teams flipped relative to our DB)
+      homeScore    = c1Score;
+      awayScore    = c0Score;
+      espnHomeIdx  = 1;
+      void n1; // used implicitly
+    }
+
+    const homeStats = (d.boxscore?.teams?.[espnHomeIdx]?.statistics ?? []) as Array<{
+      name: string; displayValue: string;
     }>;
     const possEntry  = homeStats.find((s) => s.name === "possessionPct");
     const possession = possEntry?.displayValue ? parseFloat(possEntry.displayValue) : null;
@@ -170,7 +200,9 @@ export async function POST(req: NextRequest) {
   if (game.espn_event_id) {
     result = await fetchFromEspn(
       game.espn_event_id,
-      game.espn_league ?? "fifa.world"
+      game.espn_league ?? "fifa.world",
+      game.home_team,
+      game.away_team
     );
     if (result) console.log(`[sync-auto] ESPN found: ${result.homeScore}-${result.awayScore}`);
     else        console.log("[sync-auto] ESPN: match not finished or no data");
@@ -199,7 +231,7 @@ export async function POST(req: NextRequest) {
     .update({
       home_score:           result.homeScore,
       away_score:           result.awayScore,
-      ball_possession_home: result.possession,
+      ball_possession_home: result.possession != null ? Math.round(result.possession) : null,
     } as never)
     .eq("id", gameId);
 

@@ -1,7 +1,7 @@
 /**
  * poll-thesportsdb — Supabase Edge Function
  *
- * Schedule: every 10 minutes (*/10 * * * *)
+ * Schedule: every 10 minutes — cron: "0,10,20,30,40,50 * * * *"
  *
  * Fetches live score from TheSportsDB V1 (free key "3") and writes
  * to match_latest.tdb_* columns. When FT is detected, fetches ESPN
