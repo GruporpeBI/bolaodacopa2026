@@ -89,6 +89,7 @@ export default function RankingTable({ initialData, gameRankings }: RankingTable
               rows
                 .sort((a, b) => {
                   if (b.total_pts !== a.total_pts)                 return b.total_pts - a.total_pts;
+                  if (b.poss_team_correct !== a.poss_team_correct) return b.poss_team_correct - a.poss_team_correct;
                   if (a.poss_proximity !== b.poss_proximity)       return a.poss_proximity - b.poss_proximity;
                   if (b.attendance_pts !== a.attendance_pts)       return b.attendance_pts - a.attendance_pts;
                   if (b.exact_score_pts !== a.exact_score_pts)     return b.exact_score_pts - a.exact_score_pts;

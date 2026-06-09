@@ -90,6 +90,8 @@ function PossessionInput({
     if (raw === "") { onChange(""); return; }
     const n = parseInt(raw, 10);
     if (n > 100) return;
+    // Bloqueia 2+ dígitos abaixo de 50 em tempo real (mínimo válido é 50)
+    if (raw.length >= 2 && n < 50) return;
     onChange(String(n));
   }
 
