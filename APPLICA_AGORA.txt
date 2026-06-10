@@ -1,0 +1,57 @@
+================================================================================
+APLICAR MIGRATIONS AGORA - Portugal vs Nigeria em andamento!
+================================================================================
+
+PASSO 1: Abra o link abaixo NO SEU NAVEGADOR
+================================================================================
+https://app.supabase.com/project/yzbsahubleskqbfmvmei/sql/new
+
+(Ou: Supabase Dashboard → seu projeto → SQL Editor → New Query)
+
+
+PASSO 2: Cole TUDO isso no SQL Editor
+================================================================================
+
+-- Migration 007: Adicionar colunas e tabela match_latest
+ALTER TABLE games ADD COLUMN IF NOT EXISTS thesportsdb_event_id text;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS espn_event_id text;
+ALTER TABLE games ADD COLUMN IF NOT EXISTS espn_league text DEFAULT 'fifa.world';
+ALTER TABLE games ADD COLUMN IF NOT EXISTS api_football_fixture_id text;
+
+CREATE TABLE IF NOT EXISTS match_latest (
+  event_id bigint PRIMARY KEY,
+  source text DEFAULT 'multi-source',
+  tdb_home_score integer, tdb_away_score integer, tdb_status text, tdb_fetched_at timestamptz,
+  espn_home_score integer, espn_away_score integer, espn_possession numeric, espn_status text, espn_fetched_at timestamptz,
+  af_home_score integer, af_away_score integer, af_possession numeric, af_status text, af_fetched_at timestamptz,
+  consensus_status text DEFAULT 'pending', final_confirmed boolean DEFAULT false
+);
+
+-- Migration 010: Check-in e Portugal vs Nigeria
+ALTER TABLE public.games ADD COLUMN IF NOT EXISTS checkin_enabled boolean NOT NULL DEFAULT false;
+UPDATE public.games SET checkin_enabled = true WHERE sofascore_id = 16135568;
+CREATE INDEX IF NOT EXISTS games_checkin_enabled_idx ON public.games(checkin_enabled) WHERE checkin_enabled = true;
+
+
+PASSO 3: Clique no botão RUN (▶️ play)
+================================================================================
+Aguarde aparecer: "Success" ou sem erros
+
+
+PASSO 4: Verificar que funcionou
+================================================================================
+Copie e execute CADA UM desses comandos separadamente:
+
+SELECT COUNT(*) FROM match_latest;
+SELECT COUNT(*) FROM games WHERE checkin_enabled = true;
+SELECT id, home_team, away_team, checkin_enabled FROM games WHERE sofascore_id = 16135568;
+
+
+PRONTO!
+================================================================================
+Após executar, as APIs vão funcionar em tempo real automaticamente:
+✅ poll-thesportsdb: a cada 10 minutos
+✅ poll-espn: a cada 20 minutos
+✅ Portugal vs Nigeria: dados ao vivo no site
+
+Tempo esperado: 2-3 minutos no total
