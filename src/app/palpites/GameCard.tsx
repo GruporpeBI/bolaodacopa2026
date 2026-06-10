@@ -146,7 +146,7 @@ export default function GameCard({
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2">
           {isPastDeadline ? (
             <span className="text-xs text-red-500 font-bold uppercase tracking-wider">
@@ -167,6 +167,7 @@ export default function GameCard({
             variant="gold"
             size="sm"
             onClick={handlePredictClick}
+            className="self-start"
           >
             {expanded ? "Fechar" : "Fazer palpite"}
           </Button>
