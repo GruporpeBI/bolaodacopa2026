@@ -5,9 +5,9 @@
  * api_football_fixture_id for all games that are missing any of those IDs.
  *
  * Sources queried (1 bulk request each):
- *   1. API-Football  → /fixtures?league=1&season=2026
+ *   1. TheSportsDB   → /eventsseason.php?id=4328&s=2026-2027 (extrai intAPIfootballID também)
  *   2. ESPN          → /scoreboard?limit=200&dates=20260611-20260719
- *   3. TheSportsDB   → /eventsseason.php?id=4328&s=2026-2027
+ *   3. API-Football  → /fixtures?league=1&season=2026 (fallback se TDB não tiver intAPIfootballID)
  *
  * Team name matching uses a normalizer to handle aliases like
  * "United States" ↔ "USA", "Republic of Korea" ↔ "South Korea", etc.
@@ -145,11 +145,12 @@ async function loadEspnEvents(): Promise<EspnEvent[]> {
 // ---------------------------------------------------------------------------
 
 interface TdbEvent {
-  idEvent:      string;
-  strHomeTeam:  string;
-  strAwayTeam:  string;
-  dateEvent:    string; // YYYY-MM-DD
-  strLeague:    string;
+  idEvent:        string;
+  strHomeTeam:    string;
+  strAwayTeam:    string;
+  dateEvent:      string; // YYYY-MM-DD
+  strLeague:      string;
+  idAPIfootball?: string | number; // ID da API-Football já incluído no TDB
 }
 
 async function loadTdbEvents(): Promise<TdbEvent[]> {
@@ -286,10 +287,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // TheSportsDB
+    // TheSportsDB — também extrai idAPIfootball se disponível
     if (!game.thesportsdb_event_id) {
       const tdb = findTdbEvent(game, tdbEvents);
-      if (tdb) patch.thesportsdb_event_id = tdb.idEvent;
+      if (tdb) {
+        patch.thesportsdb_event_id = tdb.idEvent;
+        // Se TDB tem o ID de API-Football, usa direto (não precisa de busca separada)
+        if (!game.api_football_fixture_id && tdb.idAPIfootball) {
+          patch.api_football_fixture_id = String(tdb.idAPIfootball);
+        }
+      }
     }
 
     if (Object.keys(patch).length > 0) {
