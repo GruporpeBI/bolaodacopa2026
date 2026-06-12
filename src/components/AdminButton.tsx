@@ -11,7 +11,7 @@ export default function AdminButton() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (pw === "123") {
+    if (pw === "wcuprpe10") {
       document.cookie = "admin_access=1; path=/; max-age=86400; samesite=strict";
       router.push("/admin");
     } else {
