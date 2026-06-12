@@ -114,9 +114,11 @@ export default function AdminTabs({ games, users, attendances, locationConfig, i
         <button className={tabClass("attendances")} onClick={() => setTab("attendances")}>
           Presenças
         </button>
-        <button className={tabClass("localizacao")} onClick={() => setTab("localizacao")}>
-          Localização
-        </button>
+        {isMaster && (
+          <button className={tabClass("localizacao")} onClick={() => setTab("localizacao")}>
+            Localização
+          </button>
+        )}
         {!isMaster && (
           <div className="ml-auto flex items-center gap-2 py-1.5">
             <input
