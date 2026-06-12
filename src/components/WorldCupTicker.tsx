@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 
-const CUP_START = new Date("2026-06-11T16:00:00-03:00");
-
 const GROUPS: [string, [string, number][]][] = [
   ["Group A", [["Mexico", 4781], ["South Africa", 4736], ["South Korea", 4735], ["Czechia", 4714]]],
   ["Group B", [["Canada", 4752], ["Bosnia & Herzegovina", 4479], ["Qatar", 4792], ["Switzerland", 4699]]],
@@ -21,27 +19,70 @@ const GROUPS: [string, [string, number][]][] = [
 
 const REPEATED = [...GROUPS, ...GROUPS];
 
-function pad(n: number) {
-  return String(n).padStart(2, "0");
-}
+// Agenda de jogos (fase de grupos) — data + horário + escudos (apenas visual, sem links).
+type Match = { time: string; home: [string, number]; away: [string, number] };
+type Day = { date: string; label: string; matches: Match[] };
+
+const AGENDA: Day[] = [
+  { date: "2026-06-12", label: "12 de jun.", matches: [
+    { time: "16:00", home: ["Canada", 4752], away: ["Bosnia & Herzegovina", 4479] },
+    { time: "22:00", home: ["USA", 4724], away: ["Paraguay", 4789] },
+  ] },
+  { date: "2026-06-13", label: "13 de jun.", matches: [
+    { time: "16:00", home: ["Qatar", 4792], away: ["Switzerland", 4699] },
+    { time: "19:00", home: ["Brazil", 4748], away: ["Morocco", 4778] },
+    { time: "22:00", home: ["Haiti", 7229], away: ["Scotland", 4695] },
+  ] },
+  { date: "2026-06-14", label: "14 de jun.", matches: [
+    { time: "01:00", home: ["Australia", 4741], away: ["Türkiye", 4700] },
+    { time: "14:00", home: ["Germany", 4711], away: ["Curaçao", 55827] },
+    { time: "17:00", home: ["Netherlands", 4705], away: ["Japan", 4770] },
+    { time: "20:00", home: ["Côte d'Ivoire", 4768], away: ["Ecuador", 4757] },
+    { time: "23:00", home: ["Sweden", 4688], away: ["Tunisia", 4729] },
+  ] },
+  { date: "2026-06-15", label: "15 de jun.", matches: [
+    { time: "13:00", home: ["Spain", 4698], away: ["Cabo Verde", 4753] },
+    { time: "16:00", home: ["Belgium", 4717], away: ["Egypt", 4758] },
+    { time: "19:00", home: ["Saudi Arabia", 4834], away: ["Uruguay", 4725] },
+    { time: "22:00", home: ["Iran", 4766], away: ["New Zealand", 4784] },
+  ] },
+  { date: "2026-06-16", label: "16 de jun.", matches: [
+    { time: "16:00", home: ["France", 4481], away: ["Senegal", 4739] },
+    { time: "19:00", home: ["Iraq", 4767], away: ["Norway", 4475] },
+    { time: "22:00", home: ["Argentina", 4819], away: ["Algeria", 4691] },
+  ] },
+  { date: "2026-06-17", label: "17 de jun.", matches: [
+    { time: "01:00", home: ["Austria", 4718], away: ["Jordan", 4771] },
+    { time: "14:00", home: ["Portugal", 4704], away: ["DR Congo", 4823] },
+    { time: "17:00", home: ["England", 4713], away: ["Croatia", 4715] },
+    { time: "20:00", home: ["Ghana", 4764], away: ["Panama", 5164] },
+    { time: "23:00", home: ["Uzbekistan", 4723], away: ["Colombia", 4820] },
+  ] },
+  { date: "2026-06-18", label: "18 de jun.", matches: [
+    { time: "13:00", home: ["Czechia", 4714], away: ["South Africa", 4736] },
+    { time: "16:00", home: ["Switzerland", 4699], away: ["Bosnia & Herzegovina", 4479] },
+    { time: "19:00", home: ["Canada", 4752], away: ["Qatar", 4792] },
+    { time: "22:00", home: ["Mexico", 4781], away: ["South Korea", 4735] },
+  ] },
+  { date: "2026-06-19", label: "19 de jun.", matches: [
+    { time: "16:00", home: ["USA", 4724], away: ["Australia", 4741] },
+    { time: "19:00", home: ["Scotland", 4695], away: ["Morocco", 4778] },
+    { time: "21:30", home: ["Brazil", 4748], away: ["Haiti", 7229] },
+  ] },
+];
 
 export default function WorldCupTicker() {
-  const [cd, setCd] = useState({ d: "00", h: "00", m: "00", s: "00" });
+  // Mostra só os dias a partir de hoje (some matchday passado conforme a Copa anda).
+  // Filtra no cliente para evitar mismatch de hidratação (SSR renderiza a lista cheia).
+  const [days, setDays] = useState<Day[]>(AGENDA);
 
   useEffect(() => {
-    function tick() {
-      const diff = Math.max(0, CUP_START.getTime() - Date.now());
-      setCd({
-        d: pad(Math.floor(diff / 86400000)),
-        h: pad(Math.floor((diff / 3600000) % 24)),
-        m: pad(Math.floor((diff / 60000) % 60)),
-        s: pad(Math.floor((diff / 1000) % 60)),
-      });
-    }
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+    const todayBr = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const upcoming = AGENDA.filter((d) => d.date >= todayBr);
+    setDays(upcoming.length > 0 ? upcoming : AGENDA);
   }, []);
+
+  const AG_REPEATED = [...days, ...days];
 
   return (
     <>
@@ -57,26 +98,19 @@ export default function WorldCupTicker() {
           box-shadow:inset 0 0 16px 0 rgba(0,0,0,0.5);
           height:40px; overflow:hidden;
         }
-        .wc-countdown {
-          min-width:260px; display:flex; align-items:center; justify-content:center;
-          gap:16px; padding:8px 16px; cursor:default; height:100%;
-          transition:background 160ms ease;
-        }
-        .wc-countdown:hover { background:rgba(255,255,255,0.08); }
+        .wc-lead { flex-shrink:0; display:flex; align-items:center; padding:0 14px; height:100%; }
         .wc-logo { width:24px; height:24px; display:flex; overflow:hidden; border-radius:4px; background:rgb(23,28,31); flex-shrink:0; }
         .wc-logo img { width:100%; height:100%; object-fit:cover; }
-        .wc-time { display:flex; align-items:baseline; font-weight:800; }
-        .wc-num { font-size:18px; line-height:1.33; }
-        .wc-unit { font-size:12px; text-transform:uppercase; margin-left:1px; }
-        .wc-sep { font-size:18px; line-height:1.33; margin:0 6px; }
         .wc-divider { width:1px; height:40px; flex-shrink:0; background:rgb(35,42,46); }
         .wc-marquee { flex:1; overflow:hidden; padding:8px 0; }
+        .wc-agenda { flex:1.4; overflow:hidden; padding:8px 0; }
         .wc-track {
           display:flex; align-items:center; flex-direction:row;
           width:max-content; gap:32px; padding-left:32px;
           animation:wc-ticker 60s linear infinite;
         }
-        .wc-marquee:hover .wc-track { animation-play-state:paused; }
+        .wc-agenda .wc-track { animation-duration:80s; gap:28px; }
+        .wc-marquee:hover .wc-track, .wc-agenda:hover .wc-track { animation-play-state:paused; }
         .wc-item { display:flex; align-items:center; gap:32px; flex-direction:row; }
         .wc-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.32); flex-shrink:0; }
         .wc-card {
@@ -91,11 +125,21 @@ export default function WorldCupTicker() {
         }
         .wc-flags { display:flex; align-items:center; gap:6px; }
         .wc-flag { width:16px; height:16px; object-fit:cover; font-size:0; display:block; }
+        /* Agenda */
+        .wc-ag-day { display:flex; align-items:center; gap:12px; flex-direction:row; flex-shrink:0; }
+        .wc-ag-date { font-size:12px; font-weight:800; color:rgb(255,255,255); white-space:nowrap; text-transform:uppercase; letter-spacing:.02em; }
+        .wc-ag-match {
+          display:flex; align-items:center; gap:6px; flex-direction:row;
+          padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.06);
+        }
+        .wc-ag-time { font-size:11px; font-weight:700; color:rgba(255,255,255,0.82); white-space:nowrap; }
+        .wc-ag-logo { width:18px; height:18px; object-fit:cover; display:block; flex-shrink:0; }
+        .wc-ag-x { font-size:10px; color:rgba(255,255,255,0.45); }
         @media (max-width:720px) {
           .wc-row { height:auto; flex-direction:column; align-items:stretch; }
-          .wc-countdown { min-width:0; }
+          .wc-lead { justify-content:center; padding:8px 0; }
+          .wc-agenda, .wc-marquee { flex:none; width:100%; }
           .wc-divider { width:100%; height:1px; }
-          .wc-marquee { width:100%; }
         }
       `}</style>
 
@@ -121,25 +165,35 @@ export default function WorldCupTicker() {
 
         {/* Content row */}
         <div className="wc-row">
-          {/* Countdown */}
-          <div className="wc-countdown">
+          {/* Logo da Copa */}
+          <div className="wc-lead">
             <div className="wc-logo">
-              <img src="/api/flag/wc-logo" alt="World Cup 2026" />
+              <img src="/api/flag/wc-logo" alt="Copa 2026" />
             </div>
-            <div className="wc-time" aria-label="Contagem regressiva para a Copa do Mundo">
-              <span className="wc-num">{cd.d}</span><span className="wc-unit">d</span>
-              <span className="wc-sep">:</span>
-              <span className="wc-num">{cd.h}</span><span className="wc-unit">h</span>
-              <span className="wc-sep">:</span>
-              <span className="wc-num">{cd.m}</span><span className="wc-unit">m</span>
-              <span className="wc-sep">:</span>
-              <span className="wc-num">{cd.s}</span><span className="wc-unit">s</span>
+          </div>
+
+          {/* Agenda de jogos (substitui o contador) — apenas visual, sem links */}
+          <div className="wc-agenda" aria-label="Agenda de jogos da Copa">
+            <div className="wc-track">
+              {AG_REPEATED.map((day, i) => (
+                <div className="wc-ag-day" key={i}>
+                  <span className="wc-ag-date">{day.label}</span>
+                  {day.matches.map((m, j) => (
+                    <div className="wc-ag-match" key={j}>
+                      <span className="wc-ag-time">{m.time}</span>
+                      <img className="wc-ag-logo" src={`/api/flag/${m.home[1]}`} alt={m.home[0]} loading="lazy" />
+                      <span className="wc-ag-x">×</span>
+                      <img className="wc-ag-logo" src={`/api/flag/${m.away[1]}`} alt={m.away[0]} loading="lazy" />
+                    </div>
+                  ))}
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="wc-divider" />
 
-          {/* Marquee */}
+          {/* Marquee dos grupos (mantida) */}
           <div className="wc-marquee">
             <div className="wc-track">
               {REPEATED.map(([name, teams], i) => (
