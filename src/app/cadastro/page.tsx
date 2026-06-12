@@ -36,11 +36,14 @@ export default function CadastroPage() {
           </p>
           <ul className="flex flex-col gap-2">
             {[
-              ["51 pts", "Presença no restaurante durante jogo do Brasil"],
-              ["30 pts", "Placar exato do jogo"],
+              ["51 pts", "Presença no restaurante (jogo Brasil)"],
               ["16 pts", "Acertou o ganhador (sem placar exato)"],
-              ["101 pts", "Campeão correto"],
-              ["121 pts", "Placar exato da final"],
+              ["30 pts", "Placar exato (todos os jogos)"],
+              ["27 pts", "Semifinalista correto (cada, palpite antecipado)"],
+              ["40 pts", "Finalista correto (cada, palpite antecipado)"],
+              ["101 pts", "Campeão correto (palpite antecipado)"],
+              ["121 pts", "Placar exato da final (palpite antecipado)"],
+              ["100 pts", "Presença na final (mesmo sendo jogo do Brasil)"],
             ].map(([pts, desc]) => (
               <li key={pts} className="flex items-start gap-3">
                 <span className="text-[#F6C900] font-bold text-xs w-16 shrink-0 pt-0.5">{pts}</span>
@@ -48,6 +51,12 @@ export default function CadastroPage() {
               </li>
             ))}
           </ul>
+          <p className="text-[#FAF6EB]/45 text-xs leading-relaxed mt-3">
+            A final abre para palpite de placar no dia do jogo (mesmo sem o Brasil). A semifinal abre no dia apenas se for jogo do Brasil. Esses palpites do dia (placar exato 30 / ganhador 16) somam com os palpites antecipados do torneio.
+          </p>
+          <p className="text-[#FAF6EB]/45 text-xs leading-relaxed mt-2">
+            Em caso de empate, o desempate é por número de presenças, placares exatos, acertos de ganhador, e proximidade na % de posse de bola.
+          </p>
         </div>
       </div>
     </main>
